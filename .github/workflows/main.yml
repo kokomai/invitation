@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source repo
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build project
+      run: npm run build
+
+    - name: Copy files to GitHub Pages repo
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # 클론해서 기존 파일 유지
+        git clone https://x-access-token:${{ secrets.REPO_TOKEN }}@github.com/kokomai/kokomai.github.io.git gh-pages
+        cd gh-pages
+
+        # 기존 파일 제거 후, 새 dist/public 내용 복사
+        rm -rf *
+        cp -r ../dist/public/* .
+
+        # 커밋 및 푸시
+        git add .
+        git commit -m "Auto deploy from invitation repo"
+        git push origin main
